@@ -13,7 +13,10 @@ j_num = size(PT,1);
 population_size = 30;
 crossover_rate = 0.8;
 mutation_rate = 0.1;
-Num_Iteration = 500;
+Num_Iteration = 10000;
+Tbest=99999999;%Objective value default setting to max
+num_tardy=99999999;
+Best_position=0;
 
 tic % Start stopwatch timer
 
@@ -24,6 +27,7 @@ population_list = zeros(population_size, j_num); % Record population (includes a
 % Initialize the Solution
 % Pick one popultaion_list and put row vector containing a random
 % permutation of integers from 1 to j_num
+
 for m = 1:population_size
     population_list(m,1:j_num) = randperm(j_num);
     % disp(population_list(m,1:j_num));
@@ -39,6 +43,7 @@ end
 % Crossover->Mutation->Repairment->Evaluation->Selection loop and we will
 % run (Num_iteration) times
 for i = 1:Num_Iteration
+    
     %record the original population_list in population_list_tmp
     population_list_tmp = population_list;
     % Crossover
@@ -212,35 +217,33 @@ for i = 1:Num_Iteration
             end
         end
     end 
-    
+    %Best result record
+    min_tardiness=sort(tardiness_list());
+    ThisIterationBest=min_tardiness(1);
+    if ThisIterationBest<Tbest
+        Tbest=ThisIterationBest;
+        for i=1:population_size
+            if Tbest==tardiness_list(i)
+                Best_position=i;
+            end
+        end
+        Best_job_sequence=population_list(Best_position,: );
+        % Calculate the num of tardy
+        num_tardy=0;
+        for b = 1:j_num;
+            Ptime = Ptime + PT(Best_job_sequence(1,b),1);
+            if (Ptime > DUE(Best_job_sequence(1,b)) )
+                num_tardy = num_tardy + 1;
+            end
+        end
+    end
 end%end the iteration
-
-min_tardiness=sort(tardiness_list());
-Tbest=min_tardiness(1);
-Best_position=0;
-
-for i=1:population_size
-    if Tbest==tardiness_list(i)
-       Best_position=i;
-    end
-end
-
-Best_job_sequence=population_list(Best_position,: );
-
-% Calculate the num of tardy
-num_tardy=0;
-for b = 1:j_num;
-	Ptime = Ptime + PT(Best_job_sequence(1,b),1);
-    if (Ptime > DUE(Best_job_sequence(1,b)) )
-       num_tardy = num_tardy + 1;
-    end
-end
 
 % Report the Results
 disp('--- Final Report ---');
-disp('Optimal Solution = '); 
+disp('Optimal Solution ( i.e., job sequence) = '); 
     disp(Best_job_sequence);
-fprintf('Optimal_Value : %d\n',Tbest);
+fprintf('Optimal function ( i.e., fitness) Value : %d\n',Tbest);
+fprintf('Running time : %.10f\n',toc);
+fprintf('Average (Weighted) Tardiness : %.2f\n',Tbest/j_num);
 fprintf('Number of Tardy : %d\n',num_tardy);
-
-toc % Read elapsed time from stopwatch
